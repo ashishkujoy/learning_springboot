@@ -1,5 +1,7 @@
 package org.learning.irctc.service;
 
+import org.learning.irctc.error.StationDoesNotExistsException;
+import org.learning.irctc.model.Station;
 import org.learning.irctc.repository.BookingRepository;
 
 public class BookingService {
@@ -22,8 +24,8 @@ public class BookingService {
         // Simulate user validation or fetching user details
         System.out.println("BookingService: validating user " + user);
         userService.getUserDetails(user);
-        stationService.searchStation(from);
-        stationService.searchStation(to);
+        stationService.validateStationsExists(from, to);
+
         discountService.applyDiscount();
         paymentService.pay();
         bookingRepository.saveBooking();
