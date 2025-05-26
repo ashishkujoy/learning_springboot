@@ -2,6 +2,7 @@ package org.learning.irctc.service;
 
 import org.learning.di.annotation.Component;
 import org.learning.irctc.repository.BookingRepository;
+import org.learning.irctc.repository.MongoBookingRepository;
 
 @Component
 public class BookingService {
@@ -11,7 +12,11 @@ public class BookingService {
     private final UserService userService;
     private final BookingRepository bookingRepository;
 
-    public BookingService(StationService stationService, PaymentService paymentService, DiscountService discountService, UserService userService, BookingRepository bookingRepository) {
+    public BookingService(StationService stationService,
+                          PaymentService paymentService,
+                          DiscountService discountService,
+                          UserService userService,
+                          MongoBookingRepository bookingRepository) {
         this.stationService = stationService;
         this.paymentService = paymentService;
         this.discountService = discountService;
