@@ -1,7 +1,5 @@
 package org.learning.irctc.error;
 
-import org.learning.irctc.model.Station;
-
 public class StationDoesNotExistsException extends RuntimeException {
     private final String station;
 

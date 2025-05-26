@@ -2,6 +2,7 @@ package org.learning.di;
 
 import org.learning.di.annotation.Component;
 import org.learning.di.annotation.Primary;
+import org.learning.di.annotation.Property;
 import org.learning.di.error.BeanCreationError;
 
 import java.lang.reflect.Constructor;
@@ -26,13 +27,14 @@ public class ApplicationContext {
 
     private void init() {
         Collection<Class<?>> classes = ClassScanner.getAllComponentClasses("");
+        ApplicationProperties applicationProperties = ApplicationProperties.load();
         for (Class<?> aClass : classes) {
-            get(aClass, classes);
+            get(aClass, classes, applicationProperties);
         }
     }
 
     @SuppressWarnings("unchecked")
-    private <T> T get(Class<T> clz, Collection<Class<?>> classes) {
+    private <T> T get(Class<T> clz, Collection<Class<?>> classes, ApplicationProperties applicationProperties) {
         if (this.cache.containsKey(clz.getName())) {
             System.out.println("Returning " + clz.getName() + " from the cache");
             return (T) this.cache.get(clz.getName());
@@ -44,16 +46,16 @@ public class ApplicationContext {
 
         if (clz.isInterface()) {
             Class<T> implementationClass = findImplementationOf(clz, classes);
-            T classInstance = createInstanceOf(implementationClass, classes);
+            T classInstance = createInstanceOf(implementationClass, classes, applicationProperties);
             this.cache.put(clz.getName(), classInstance);
             return classInstance;
         }
 
-        return createInstanceOf(clz, classes);
+        return createInstanceOf(clz, classes, applicationProperties);
     }
 
     @SuppressWarnings("unchecked")
-    private <T> T createInstanceOf(Class<T> clz, Collection<Class<?>> classes) {
+    private <T> T createInstanceOf(Class<T> clz, Collection<Class<?>> classes, ApplicationProperties applicationProperties) {
         System.out.println("Creating instance of clz " + clz.getName());
         Constructor<?> constructor = clz.getConstructors()[0];
         Parameter[] parameters = constructor.getParameters();
@@ -61,7 +63,13 @@ public class ApplicationContext {
         Object[] args = new Object[parameters.length];
 
         for (int i = 0; i < parameters.length; i++) {
-            args[i] = get(parameters[i].getType(), classes);
+            Parameter parameter = parameters[i];
+            if(parameter.isAnnotationPresent(Property.class)) {
+                String value = applicationProperties.get(parameter.getAnnotation(Property.class).value());
+                args[i] = value;
+                continue;
+            }
+            args[i] = get(parameter.getType(), classes, applicationProperties);
         }
 
         try {
