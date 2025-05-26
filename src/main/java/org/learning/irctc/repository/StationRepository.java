@@ -1,9 +1,11 @@
 package org.learning.irctc.repository;
 
+import org.learning.di.annotation.Component;
 import org.learning.irctc.model.Station;
 
 import java.util.HashMap;
 
+@Component
 public class StationRepository {
     private static final HashMap<String, Station> stations = new HashMap<>();
 
