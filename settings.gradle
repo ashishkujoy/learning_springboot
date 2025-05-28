@@ -1,1 +1,2 @@
 rootProject.name = 'irctc'
+include('di')

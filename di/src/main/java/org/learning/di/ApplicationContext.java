@@ -1,14 +1,11 @@
 package org.learning.di;
 
 import org.learning.di.annotation.*;
-import org.learning.di.error.AutoConfigurationError;
 import org.learning.di.error.BeanCreationError;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class ApplicationContext {
@@ -30,34 +27,6 @@ public class ApplicationContext {
         for (Class<?> aClass : classes) {
             get(aClass, classes, applicationProperties);
         }
-        callAutoConfiguration(this.cache.values());
-    }
-
-    private void callAutoConfiguration(Collection<Object> beans) {
-        beans.stream()
-                .filter(clz -> clz.getClass().isAnnotationPresent(AutoConfiguration.class))
-                .forEach(autoConfiguration -> invokeConfiguration(autoConfiguration, beans));
-    }
-
-    private static void invokeConfiguration(Object autoConfiguration, Collection<Object> beans) {
-        Method configurationMethod = getConfigurationMethod(autoConfiguration.getClass());
-        try {
-            configurationMethod.invoke(autoConfiguration, beans);
-        } catch (Throwable e) {
-            throw AutoConfigurationError.errorInvokingConfigurationMethod(autoConfiguration.getClass(), configurationMethod, e);
-        }
-    }
-
-    private static Method getConfigurationMethod(Class<?> autoConfiguration) {
-        ArrayList<Method> configurationMethods = Arrays.stream(autoConfiguration.getMethods())
-                .filter(method -> method.isAnnotationPresent(Configure.class))
-                .collect(Collectors.toCollection(ArrayList::new));
-
-        if (configurationMethods.size() != 1) {
-            throw AutoConfigurationError.invalidConfigurationMethodCount(autoConfiguration, configurationMethods.size());
-        }
-
-        return configurationMethods.get(0);
     }
 
     @SuppressWarnings("unchecked")

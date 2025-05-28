@@ -7,7 +7,6 @@ import org.burningwave.core.classes.SearchConfig;
 import org.burningwave.core.io.PathHelper;
 import org.learning.di.annotation.Component;
 
-import java.lang.annotation.Annotation;
 import java.util.Collection;
 
 public class ClassScanner {
