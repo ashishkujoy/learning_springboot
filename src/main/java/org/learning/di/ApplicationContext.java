@@ -1,15 +1,14 @@
 package org.learning.di;
 
-import org.learning.di.annotation.Component;
-import org.learning.di.annotation.Primary;
-import org.learning.di.annotation.Property;
+import org.learning.di.annotation.*;
+import org.learning.di.error.AutoConfigurationError;
 import org.learning.di.error.BeanCreationError;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class ApplicationContext {
@@ -31,6 +30,34 @@ public class ApplicationContext {
         for (Class<?> aClass : classes) {
             get(aClass, classes, applicationProperties);
         }
+        callAutoConfiguration(this.cache.values());
+    }
+
+    private void callAutoConfiguration(Collection<Object> beans) {
+        beans.stream()
+                .filter(clz -> clz.getClass().isAnnotationPresent(AutoConfiguration.class))
+                .forEach(autoConfiguration -> invokeConfiguration(autoConfiguration, beans));
+    }
+
+    private static void invokeConfiguration(Object autoConfiguration, Collection<Object> beans) {
+        Method configurationMethod = getConfigurationMethod(autoConfiguration.getClass());
+        try {
+            configurationMethod.invoke(autoConfiguration, beans);
+        } catch (Throwable e) {
+            throw AutoConfigurationError.errorInvokingConfigurationMethod(autoConfiguration.getClass(), configurationMethod, e);
+        }
+    }
+
+    private static Method getConfigurationMethod(Class<?> autoConfiguration) {
+        ArrayList<Method> configurationMethods = Arrays.stream(autoConfiguration.getMethods())
+                .filter(method -> method.isAnnotationPresent(Configure.class))
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        if (configurationMethods.size() != 1) {
+            throw AutoConfigurationError.invalidConfigurationMethodCount(autoConfiguration, configurationMethods.size());
+        }
+
+        return configurationMethods.get(0);
     }
 
     @SuppressWarnings("unchecked")
@@ -40,8 +67,12 @@ public class ApplicationContext {
             return (T) this.cache.get(clz.getName());
         }
 
-        if (!clz.isAnnotationPresent(Component.class) && !clz.isInterface()) {
+        if (!AnnotationUtils.isAnnotatedWith(clz, Component.class) && !clz.isInterface()) {
             throw BeanCreationError.notAComponent(clz);
+        }
+
+        if (clz.isAnnotation()) {
+            return null;
         }
 
         if (clz.isInterface()) {
@@ -64,7 +95,7 @@ public class ApplicationContext {
 
         for (int i = 0; i < parameters.length; i++) {
             Parameter parameter = parameters[i];
-            if(parameter.isAnnotationPresent(Property.class)) {
+            if (parameter.isAnnotationPresent(Property.class)) {
                 String value = applicationProperties.get(parameter.getAnnotation(Property.class).value());
                 args[i] = value;
                 continue;
@@ -105,7 +136,7 @@ public class ApplicationContext {
             throw BeanCreationError.moreThanOnePrimaryImplementationPresent(clz, primaryClasses);
         }
 
-        if(primaryClasses.isEmpty()) {
+        if (primaryClasses.isEmpty()) {
             throw BeanCreationError.noPrimaryImplementationFound(clz, implementationClasses);
         }
 

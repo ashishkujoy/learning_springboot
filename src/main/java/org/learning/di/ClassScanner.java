@@ -7,6 +7,7 @@ import org.burningwave.core.classes.SearchConfig;
 import org.burningwave.core.io.PathHelper;
 import org.learning.di.annotation.Component;
 
+import java.lang.annotation.Annotation;
 import java.util.Collection;
 
 public class ClassScanner {
@@ -17,7 +18,7 @@ public class ClassScanner {
 
         SearchConfig searchConfig = SearchConfig.forPaths(pathHelper.getMainClassPaths())
                 .by(ClassCriteria.create().allThoseThatMatch(cls ->
-                        cls.isAnnotationPresent(Component.class)
+                        AnnotationUtils.isAnnotatedWith(cls, Component.class)
                 ));
 
         return classHunter.findBy(searchConfig).getClasses();
